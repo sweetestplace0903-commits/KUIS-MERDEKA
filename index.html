@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Merdeka</title>
+    <style>
+        /* CSS untuk Styling Halaman */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: #ffffff;
+            --text-color: #2c3e50;
+            --primary-color: #e74c3c;
+            --secondary-color: #c0392b;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --border-color: #dde1e7;
+            --answered-color: #95a5a6;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --explanation-bg: #ecf0f1;
+            --selected-bg: #e9d8fd;
+            --selected-border: #9b59b6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            padding: 30px;
+        }
+
+        .quiz-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        /* Gaya untuk Kotak Nomor */
+        #question-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .number-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .number-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .number-box.answered {
+            background-color: var(--answered-color) !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Kontainer Soal */
+        #question-container {
+            display: none;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        #question {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            background-color: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            padding: 15px;
+            text-align: left;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover:not([disabled]) {
+            background-color: #fdf2f1;
+            border-color: var(--secondary-color);
+        }
+        
+        .btn.selected {
+            background-color: var(--selected-bg);
+            border-color: var(--selected-border);
+        }
+
+        .btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+        }
+
+        .btn.incorrect {
+            background-color: var(--incorrect-color);
+            color: white;
+            border-color: var(--incorrect-color);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+        }
+
+        /* Kontainer Penjelasan dan Tombol-tombol Kontrol */
+        #explanation-container {
+            display: none;
+            margin-top: 25px;
+            padding: 15px;
+            background-color: var(--explanation-bg);
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #check-btn, #back-btn {
+            display: none;
+            width: 100%;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        #check-btn:hover, #back-btn:hover {
+            background-color: var(--primary-color);
+        }
+
+        #check-btn:disabled {
+            background-color: var(--answered-color);
+            cursor: not-allowed;
+        }
+
+        /* Kontainer Skor */
+        #score-container {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        #score-container h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        #score-text {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        #restart-btn {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 15px 40px;
+            transition: background-color 0.3s ease;
+        }
+
+        #restart-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1>Kuis Merdeka 🇮🇩</h1>
+        </div>
+        
+        <div id="question-grid">
+            <!-- Kotak nomor akan dibuat oleh JavaScript -->
+        </div>
+
+        <div id="question-container">
+            <h2 id="question">Teks Pertanyaan</h2>
+            <div id="answer-buttons" class="answer-buttons">
+                <!-- Tombol jawaban akan dibuat oleh JavaScript -->
+            </div>
+            <div id="explanation-container">
+                <p id="explanation-text"></p>
+            </div>
+            <div class="controls">
+                <button id="check-btn" disabled>Periksa Jawaban</button>
+                <button id="back-btn">Kembali ke Daftar Soal</button>
+            </div>
+        </div>
+
+        <div id="score-container">
+            <h2>Kuis Selesai!</h2>
+            <p id="score-text"></p>
+            <button id="restart-btn">Ulangi Kuis</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript untuk Logika Kuis
+        const questions = [
+            {
+                question: "Bendera negara kita, Sang Saka Merah Putih, dijahit oleh seorang pahlawan wanita. Siapakah nama beliau?",
+                answers: [
+                    { text: "R.A. Kartini", correct: false, rationale: "R.A. Kartini adalah pahlawan emansipasi wanita, tetapi beliau tidak menjahit bendera pusaka." },
+                    { text: "Fatmawati", correct: true, rationale: "Ibu Fatmawati, istri dari Presiden Soekarno, adalah sosok yang menjahit bendera pusaka pertama." },
+                    { text: "Cut Nyak Dien", correct: false, rationale: "Cut Nyak Dien adalah pahlawan wanita yang berjuang melawan penjajah di Aceh." },
+                    { text: "Martha Christina Tiahahu", correct: false, rationale: "Martha Christina Tiahahu adalah pahlawan wanita yang berjuang di Maluku." }
+                ]
+            },
+            {
+                question: "Lagu kebangsaan kita adalah 'Indonesia Raya'. Siapakah komponis atau pencipta lagu tersebut?",
+                answers: [
+                    { text: "Ismail Marzuki", correct: false, rationale: "Ismail Marzuki adalah seorang komponis hebat, namun bukan pencipta lagu Indonesia Raya." },
+                    { text: "C. Simanjuntak", correct: false, rationale: "C. Simanjuntak menciptakan banyak lagu perjuangan, tetapi bukan 'Indonesia Raya'." },
+                    { text: "W.R. Supratman", correct: true, rationale: "Wage Rudolf Supratman adalah pahlawan nasional yang menciptakan lagu kebangsaan kita." },
+                    { text: "Ibu Sud", correct: false, rationale: "Ibu Sud dikenal sebagai pencipta lagu anak-anak yang populer." }
+                ]
+            },
+            {
+                question: "Indonesia merdeka pada tahun 1945. Jika nanti adalah tahun 2045, tepat satu abad kemerdekaan, sudah berapa tahun Indonesia merdeka?",
+                answers: [
+                    { text: "90 tahun", correct: false, rationale: "Satu abad adalah 100 tahun, bukan 90 tahun." },
+                    { text: "95 tahun", correct: false, rationale: "Perhitungan ini belum tepat. Coba kurangi 2045 dengan 1945." },
+                    { text: "100 tahun", correct: true, rationale: "Satu abad sama dengan 100 tahun. Pengurangan 2045 - 1945 menghasilkan 100 tahun." },
+                    { text: "105 tahun", correct: false, rationale: "Hasil perhitungan ini terlalu besar." }
+                ]
+            },
+            {
+                question: "Pahlawan sering menggunakan bambu runcing sebagai senjata. Dari sudut pandang sains, bambu termasuk dalam keluarga tanaman apa?",
+                answers: [
+                    { text: "Pohon", correct: false, rationale: "Meskipun tinggi dan kuat, bambu memiliki klasifikasi yang berbeda dalam ilmu biologi." },
+                    { text: "Rumput", correct: true, rationale: "Secara ilmiah, bambu adalah salah satu jenis rumput-rumputan raksasa." },
+                    { text: "Kaktus", correct: false, rationale: "Kaktus biasanya tumbuh di daerah kering dan memiliki duri, sangat berbeda dengan bambu." },
+                    { text: "Jamur", correct: false, rationale: "Jamur termasuk dalam kingdom Fungi, bukan tumbuhan seperti bambu." }
+                ]
+            },
+            {
+                question: "Teks proklamasi kemerdekaan Indonesia dibacakan di sebuah rumah. Rumah siapakah itu?",
+                answers: [
+                    { text: "Mohammad Hatta", correct: false, rationale: "Pembacaan teks tidak dilakukan di rumah Mohammad Hatta." },
+                    { text: "Soekarno", correct: true, rationale: "Teks proklamasi dibacakan di kediaman Ir. Soekarno di Jalan Pegangsaan Timur No. 56, Jakarta." },
+                    { text: "Ahmad Soebardjo", correct: false, rationale: "Rumah Ahmad Soebardjo digunakan untuk merumuskan naskah proklamasi, bukan pembacaannya." },
+                    { text: "Sutan Sjahrir", correct: false, rationale: "Sutan Sjahrir adalah tokoh penting, tetapi proklamasi tidak dibacakan di rumahnya." }
+                ]
+            },
+            {
+                question: "Dalam naskah otentik proklamasi, terdapat kata 'menjatakan'. Bagaimana penulisan kata tersebut yang benar menurut ejaan saat ini?",
+                answers: [
+                    { text: "Menyatakan", correct: true, rationale: "Menurut Ejaan Yang Disempurnakan (EYD), penulisan yang baku adalah 'menyatakan'." },
+                    { text: "Dinyatakan", correct: false, rationale: "Kata 'dinyatakan' adalah bentuk pasif, sedangkan kalimat tersebut membutuhkan bentuk aktif." },
+                    { text: "Pernyataan", correct: false, rationale: "Kata 'pernyataan' adalah kata benda, bukan kata kerja." },
+                    { text: "Diatakan", correct: false, rationale: "Ini bukan kata yang baku dalam Bahasa Indonesia." }
+                ]
+            },
+            {
+                question: "Semboyan negara kita adalah 'Bhinneka Tunggal Ika'. Apa arti dari semboyan tersebut?",
+                answers: [
+                    { text: "Bersatu kita teguh, bercerai kita runtuh", correct: false, rationale: "Ini adalah peribahasa yang maknanya mirip, tetapi bukan arti harfiahnya." },
+                    { text: "Berbeda-beda tetapi tetap satu jua", correct: true, rationale: "Semboyan ini berasal dari bahasa Jawa Kuno yang artinya mengakui keragaman dalam satu kesatuan." },
+                    { text: "Sekali merdeka tetap merdeka", correct: false, rationale: "Ini adalah slogan perjuangan, bukan arti dari semboyan negara." },
+                    { text: "Dari rakyat, oleh rakyat, untuk rakyat", correct: false, rationale: "Ini adalah prinsip dasar dari sistem pemerintahan demokrasi." }
+                ]
+            },
+            {
+                question: "Proklamasi dibacakan pada 17 Agustus 1945. Jika sebuah perayaan kemerdekaan diadakan tepat 3 minggu setelah tanggal tersebut, jatuh pada tanggal berapakah perayaan itu?",
+                answers: [
+                    { text: "31 Agustus", correct: false, rationale: "Tiga minggu adalah 21 hari, bukan 14 hari." },
+                    { text: "7 September", correct: true, rationale: "Perhitungan 17 Agustus + 21 hari (3 minggu) akan jatuh pada tanggal 7 September." },
+                    { text: "10 September", correct: false, rationale: "Hasil ini terlalu jauh, coba hitung lagi dengan teliti." },
+                    { text: "14 Agustus", correct: false, rationale: "Ini adalah tanggal sebelum proklamasi." }
+                ]
+            },
+            {
+                question: "Warna merah pada bendera Indonesia melambangkan keberanian. Dalam dunia sains, warna merah juga identik dengan api. Mengapa api seringkali berwarna merah atau oranye?",
+                answers: [
+                    { text: "Karena suhunya paling panas", correct: false, rationale: "Warna api yang paling panas justru berwarna biru atau putih." },
+                    { text: "Karena adanya pembakaran yang tidak sempurna", correct: true, rationale: "Warna merah/oranye pada api disebabkan oleh partikel karbon (jelaga) yang berpijar karena pembakaran tidak sempurna." },
+                    { text: "Karena ada kandungan air", correct: false, rationale: "Air justru akan memadamkan api, bukan memberinya warna." },
+                    { text: "Karena semua api berwarna merah", correct: false, rationale: "Tidak semua api berwarna merah, contohnya api kompor gas bisa berwarna biru." }
+                ]
+            },
+            {
+                question: "Naskah proklamasi yang otentik adalah hasil ketikan. Siapakah tokoh yang mengetik naskah proklamasi kemerdekaan tersebut?",
+                answers: [
+                    { text: "Soekarno", correct: false, rationale: "Soekarno adalah salah satu perumus dan pembaca teks proklamasi, bukan yang mengetiknya." },
+                    { text: "B.M. Diah", correct: false, rationale: "B.M. Diah adalah wartawan yang berperan menyebarkan berita proklamasi." },
+                    { text: "Sayuti Melik", correct: true, rationale: "Sayuti Melik adalah tokoh yang bertugas mengetik naskah proklamasi yang sudah dirumuskan." },
+                    { text: "Mohammad Hatta", correct: false, rationale: "Mohammad Hatta ikut merumuskan naskah proklamasi, tetapi tidak mengetiknya." }
+                ]
+            },
+            {
+                question: "Sila ke-3 Pancasila, 'Persatuan Indonesia', memiliki lambang yang mencerminkan persatuan dan kesatuan. Apakah lambang sila tersebut?",
+                answers: [
+                    { text: "Bintang", correct: false, rationale: "Bintang adalah lambang sila pertama, Ketuhanan Yang Maha Esa." },
+                    { text: "Rantai", correct: false, rationale: "Rantai adalah lambang sila kedua, Kemanusiaan yang Adil dan Beradab." },
+                    { text: "Pohon Beringin", correct: true, rationale: "Pohon beringin melambangkan tempat bernaung bagi seluruh rakyat Indonesia." },
+                    { text: "Padi dan Kapas", correct: false, rationale: "Padi dan Kapas adalah lambang sila kelima, Keadilan Sosial." }
+                ]
+            },
+            {
+                question: "Para pahlawan sering berdiskusi untuk menyatukan pendapat. Jika ada 5 pahlawan berdiskusi dan semuanya saling berjabat tangan sekali, ada berapa total jabat tangan yang terjadi?",
+                answers: [
+                    { text: "5 jabat tangan", correct: false, rationale: "Jika hanya 5, berarti ada pahlawan yang tidak saling berjabat tangan." },
+                    { text: "25 jabat tangan", correct: false, rationale: "Ini adalah hasil dari 5x5, yang tidak tepat untuk soal kombinasi." },
+                    { text: "10 jabat tangan", correct: true, rationale: "Ini adalah soal kombinasi. Rumus yang digunakan adalah n(n-1)/2, sehingga 5(4)/2 = 10." },
+                    { text: "15 jabat tangan", correct: false, rationale: "Jumlah ini terlalu banyak, coba gunakan rumus kombinasi sederhana." }
+                ]
+            },
+            {
+                question: "Saat agresi militer Belanda, ibu kota Indonesia pernah dipindahkan sementara untuk menjaga jalannya pemerintahan. Ke kota manakah ibu kota dipindahkan?",
+                answers: [
+                    { text: "Bandung", correct: false, rationale: "Bandung dikenal dengan peristiwa Bandung Lautan Api, tetapi tidak menjadi ibu kota." },
+                    { text: "Surabaya", correct: false, rationale: "Surabaya dikenal dengan pertempuran 10 November, tetapi bukan ibu kota darurat." },
+                    { text: "Yogyakarta", correct: true, rationale: "Karena situasi keamanan, ibu kota sempat dipindahkan ke Yogyakarta dari tahun 1946 hingga 1949." },
+                    { text: "Medan", correct: false, rationale: "Medan adalah pusat perjuangan di Sumatera Utara, tetapi tidak pernah menjadi ibu kota negara." }
+                ]
+            },
+            {
+                question: "Untuk menghormati jasa pahlawan, kita sering mengheningkan cipta. Proses 'cipta' atau berpikir ini adalah fungsi dari organ tubuh yang mana?",
+                answers: [
+                    { text: "Jantung", correct: false, rationale: "Jantung berfungsi untuk memompa darah ke seluruh tubuh." },
+                    { text: "Otak", correct: true, rationale: "Otak adalah pusat kendali tubuh yang bertanggung jawab untuk berpikir, merasa, dan mengingat." },
+                    { text: "Paru-paru", correct: false, rationale: "Paru-paru berfungsi untuk proses pernapasan." },
+                    { text: "Hati", correct: false, rationale: "Hati memiliki banyak fungsi, salah satunya adalah menyaring racun dari darah." }
+                ]
+            },
+            {
+                question: "Puncak Monumen Nasional (Monas) yang berbentuk lidah api dilapisi oleh logam mulia. Apa simbol kimia untuk logam mulia emas?",
+                answers: [
+                    { text: "Ag", correct: false, rationale: "Ag adalah simbol untuk unsur Perak (Argentum)." },
+                    { text: "Fe", correct: false, rationale: "Fe adalah simbol untuk unsur Besi (Ferrum)." },
+                    { text: "Em", correct: false, rationale: "Ini bukan simbol unsur kimia yang valid." },
+                    { text: "Au", correct: true, rationale: "Au adalah simbol untuk unsur Emas (Aurum)." }
+                ]
+            },
+            {
+                question: "Pekik 'Merdeka!' yang diteriakkan dengan semangat untuk membangkitkan perjuangan, dalam tata bahasa Indonesia tergolong sebagai jenis kata apa?",
+                answers: [
+                    { text: "Kata benda", correct: false, rationale: "Kata benda merujuk pada nama orang, tempat, atau benda." },
+                    { text: "Kata kerja", correct: false, rationale: "Kata kerja menunjukkan suatu tindakan atau perbuatan." },
+                    { text: "Kata seru (Interjeksi)", correct: true, rationale: "Kata seru atau interjeksi digunakan untuk mengungkapkan perasaan seperti semangat." },
+                    { text: "Kata sifat", correct: false, rationale: "Kata sifat digunakan untuk menjelaskan sifat suatu benda." }
+                ]
+            },
+            {
+                question: "Pertempuran heroik 10 November 1945 di Surabaya terjadi kira-kira berapa lama setelah Proklamasi Kemerdekaan 17 Agustus 1945?",
+                answers: [
+                    { text: "Kira-kira 1 bulan", correct: false, rationale: "Ini terlalu cepat, jaraknya lebih dari 1 bulan." },
+                    { text: "Kira-kira 2 bulan", correct: false, rationale: "Hampir benar, tetapi ada jawaban yang lebih presisi." },
+                    { text: "Kira-kira 3 bulan", correct: true, rationale: "Dari pertengahan Agustus ke pertengahan November, selisih waktunya adalah sekitar 3 bulan." },
+                    { text: "Kira-kira 4 bulan", correct: false, rationale: "Ini terlalu lama, jaraknya tidak sampai 4 bulan." }
+                ]
+            },
+            {
+                question: "Jenderal Soedirman dikenal memimpin perang gerilya dalam kondisi sakit. Taktik perang gerilya ini dilakukan dengan cara...",
+                answers: [
+                    { text: "Bertempur di medan terbuka", correct: false, rationale: "Perang gerilya justru menghindari pertempuran langsung di medan terbuka." },
+                    { text: "Bersembunyi dan menyerang tiba-tiba", correct: true, rationale: "Taktik gerilya mengandalkan serangan cepat dan mendadak untuk melemahkan musuh." },
+                    { text: "Menggunakan pesawat tempur", correct: false, rationale: "Pada masa itu, pejuang Indonesia belum memiliki armada pesawat tempur." },
+                    { text: "Melakukan perundingan damai", correct: false, rationale: "Gerilya adalah bentuk perlawanan fisik, bukan diplomasi." }
+                ]
+            },
+            {
+                question: "Banyak monumen pahlawan terbuat dari batu yang dipahat. Proses memahat batu ini adalah contoh perubahan fisika, karena...",
+                answers: [
+                    { text: "Batunya berubah menjadi zat baru", correct: false, rationale: "Pada perubahan fisika, tidak ada zat baru yang terbentuk." },
+                    { text: "Hanya bentuknya yang berubah, bukan zatnya", correct: true, rationale: "Memahat batu hanya mengubah bentuknya, tetapi materinya tetaplah batu. Ini adalah ciri perubahan fisika." },
+                    { text: "Batunya menjadi lebih kuat", correct: false, rationale: "Perubahan kekuatan tidak menentukan jenis perubahannya." },
+                    { text: "Prosesnya mengeluarkan panas", correct: false, rationale: "Pengeluaran panas bisa terjadi pada perubahan fisika maupun kimia." }
+                ]
+            },
+            {
+                question: "Naskah proklamasi adalah dokumen yang sangat penting. Dari segi bahasa, kata 'naskah' itu sendiri terdiri dari berapa huruf konsonan?",
+                answers: [
+                    { text: "3", correct: false, rationale: "Coba hitung lagi huruf yang bukan A, I, U, E, O." },
+                    { text: "4", correct: true, rationale: "Huruf konsonan dalam kata 'naskah' adalah n, s, k, h, yang totalnya berjumlah 4." },
+                    { text: "5", correct: false, rationale: "Jumlah ini terlalu banyak. Ingat, huruf vokal tidak dihitung." },
+                    { text: "2", correct: false, rationale: "Jumlah ini terlalu sedikit. Ada lebih dari dua huruf konsonan." }
+                ]
+            },
+            {
+                question: "Bangsa Eropa, termasuk Belanda, menjajah Indonesia selama ratusan tahun untuk mencari rempah-rempah. Manakah di bawah ini yang BUKAN termasuk rempah-rempah?",
+                answers: [
+                    { text: "Cengkeh", correct: false, rationale: "Cengkeh adalah salah satu rempah-rempah asli Indonesia yang paling dicari." },
+                    { text: "Pala", correct: false, rationale: "Pala adalah komoditas rempah yang sangat berharga." },
+                    { text: "Gandum", correct: true, rationale: "Gandum adalah tanaman biji-bijian (serealia), bukan termasuk rempah-rempah." },
+                    { text: "Lada", correct: false, rationale: "Lada atau merica adalah salah satu rempah utama dalam perdagangan dunia." }
+                ]
+            },
+            {
+                question: "Dalam upacara, bendera dikibarkan pada tiang. Jika tinggi tiang bendera 17 meter dan panjang kain benderanya 3 meter, berapa total panjang jika bendera dibentangkan lurus dari puncak tiang ke bawah?",
+                answers: [
+                    { text: "14 meter", correct: false, rationale: "Ini adalah hasil pengurangan, seharusnya ditambahkan." },
+                    { text: "20 meter", correct: true, rationale: "Dengan menambahkan panjang tiang (17 m) dan panjang bendera (3 m), total panjangnya menjadi 20 meter." },
+                    { text: "51 meter", correct: false, rationale: "Ini adalah hasil perkalian, bukan penjumlahan." },
+                    { text: "173 meter", correct: false, rationale: "Jawaban ini tidak logis. Cukup tambahkan kedua angka yang ada." }
+                ]
+            },
+            {
+                question: "Peristiwa Rengasdengklok adalah saat para pemuda 'mengamankan' Soekarno-Hatta. Apa tujuan utama dari peristiwa ini?",
+                answers: [
+                    { text: "Untuk mengadili Soekarno dan Hatta", correct: false, rationale: "Tujuannya bukan untuk mengadili, melainkan untuk tujuan yang lebih mendesak." },
+                    { text: "Untuk menjauhkan mereka dari pengaruh Jepang", correct: true, rationale: "Para pemuda khawatir Jepang akan menghalangi proklamasi, sehingga mereka mengamankan kedua tokoh ini." },
+                    { text: "Untuk mengajak mereka berlibur", correct: false, rationale: "Situasinya sangat genting, bukan waktunya untuk berlibur." },
+                    { text: "Untuk menyerahkan mereka ke pihak Belanda", correct: false, rationale: "Tindakan ini justru bertentangan dengan semangat kemerdekaan." }
+                ]
+            },
+            {
+                question: "Jasad para pahlawan yang dimakamkan akan mengalami proses penguraian di dalam tanah. Proses ini dibantu oleh organisme kecil yang disebut...",
+                answers: [
+                    { text: "Produsen", correct: false, rationale: "Produsen adalah organisme yang membuat makanannya sendiri, seperti tumbuhan." },
+                    { text: "Konsumen", correct: false, rationale: "Konsumen adalah organisme yang memakan organisme lain, seperti hewan." },
+                    { text: "Dekomposer (Pengurai)", correct: true, rationale: "Dekomposer, seperti bakteri dan jamur, berfungsi menguraikan sisa-sisa makhluk hidup yang telah mati." },
+                    { text: "Predator", correct: false, rationale: "Predator adalah hewan yang berburu dan memakan hewan lain." }
+                ]
+            },
+            {
+                question: "Dalam Pembukaan UUD 1945, terdapat kalimat 'Atas berkat rahmat Allah Yang Maha Kuasa'. Hal ini menunjukkan bahwa kemerdekaan Indonesia diyakini sebagai...",
+                answers: [
+                    { text: "Hadiah dari Jepang", correct: false, rationale: "Kemerdekaan Indonesia adalah hasil perjuangan bangsa, bukan pemberian." },
+                    { text: "Hasil perundingan dengan Belanda", correct: false, rationale: "Kemerdekaan diproklamasikan secara sepihak, bukan melalui perundingan saat itu." },
+                    { text: "Anugerah dari Tuhan", correct: true, rationale: "Kalimat tersebut secara eksplisit menyatakan keyakinan bahwa kemerdekaan adalah berkat dari Tuhan." },
+                    { text: "Keberuntungan semata", correct: false, rationale: "Kemerdekaan diraih melalui perjuangan keras dan pengorbanan." }
+                ]
+            },
+            {
+                question: "Naskah proklamasi dirumuskan di rumah seorang perwira tinggi Jepang yang bersimpati pada perjuangan Indonesia. Siapakah nama perwira tersebut?",
+                answers: [
+                    { text: "Laksamana Tadashi Maeda", correct: true, rationale: "Rumah Laksamana Tadashi Maeda di Jakarta Pusat menjadi tempat aman bagi para tokoh bangsa untuk merumuskan teks proklamasi." },
+                    { text: "Jenderal Hideki Tojo", correct: false, rationale: "Hideki Tojo adalah Perdana Menteri Jepang saat itu, tidak terlibat langsung dalam perumusan." },
+                    { text: "Jenderal Kumakichi Harada", correct: false, rationale: "Kumakichi Harada adalah Panglima Tentara ke-16 Jepang di Jawa." },
+                    { text: "Kaisar Hirohito", correct: false, rationale: "Hirohito adalah Kaisar Jepang yang mengumumkan penyerahan Jepang kepada Sekutu." }
+                ]
+            },
+            {
+                question: "Badan yang dibentuk setelah BPUPKI bubar dan bertugas mengesahkan UUD 1945 adalah...",
+                answers: [
+                    { text: "PPKI (Panitia Persiapan Kemerdekaan Indonesia)", correct: true, rationale: "PPKI, yang diketuai oleh Ir. Soekarno, bertugas mempersiapkan kemerdekaan dan mengesahkan UUD 1945." },
+                    { text: "TKR (Tentara Keamanan Rakyat)", correct: false, rationale: "TKR adalah cikal bakal Tentara Nasional Indonesia (TNI)." },
+                    { text: "PETA (Pembela Tanah Air)", correct: false, rationale: "PETA adalah kesatuan militer yang dibentuk oleh Jepang." },
+                    { text: "KNIP (Komite Nasional Indonesia Pusat)", correct: false, rationale: "KNIP berfungsi sebagai badan legislatif sementara setelah kemerdekaan." }
+                ]
+            },
+            {
+                question: "Upacara bendera dimulai pukul 07:00 pagi dan berlangsung selama 45 menit. Pukul berapakah upacara tersebut selesai?",
+                answers: [
+                    { text: "Pukul 07:30", correct: false, rationale: "Waktu ini kurang dari 45 menit." },
+                    { text: "Pukul 07:45", correct: true, rationale: "Dengan menambahkan 45 menit ke waktu mulai pukul 07:00, waktu selesainya adalah pukul 07:45." },
+                    { text: "Pukul 08:00", correct: false, rationale: "Waktu ini lebih dari 45 menit." },
+                    { text: "Pukul 08:45", correct: false, rationale: "Ini adalah penambahan 1 jam 45 menit, bukan 45 menit." }
+                ]
+            },
+            {
+                question: "Lomba tradisional yang sangat populer saat perayaan 17 Agustus di mana peserta memanjat pohon pinang yang dilumuri pelumas disebut...",
+                answers: [
+                    { text: "Tarik Tambang", correct: false, rationale: "Tarik tambang adalah lomba adu kekuatan menarik tali." },
+                    { text: "Balap Karung", correct: false, rationale: "Balap karung adalah lomba lari dengan kaki dimasukkan ke dalam karung." },
+                    { text: "Panjat Pinang", correct: true, rationale: "Panjat Pinang adalah perlombaan tradisional yang melambangkan semangat gotong royong dan perjuangan." },
+                    { text: "Gebuk Bantal", correct: false, rationale: "Gebuk bantal adalah lomba adu keseimbangan di atas sebatang bambu." }
+                ]
+            },
+            {
+                question: "Kata 'proklamasi' merupakan kata serapan. Apa sinonim atau padanan kata 'proklamasi' dalam Bahasa Indonesia?",
+                answers: [
+                    { text: "Pengumuman", correct: false, rationale: "Pengumuman bersifat lebih umum dan tidak selalu resmi." },
+                    { text: "Pernyataan", correct: false, rationale: "Pernyataan bisa bersifat pribadi atau kelompok, tidak selalu untuk seluruh rakyat." },
+                    { text: "Pemakluman", correct: true, rationale: "'Pemakluman' adalah padanan kata yang paling tepat untuk 'proklamasi', yang berarti pengumuman resmi kepada seluruh rakyat." },
+                    { text: "Pemberitahuan", correct: false, rationale: "Pemberitahuan lebih bersifat informatif biasa." }
+                ]
+            },
+            {
+                question: "Suara pembacaan teks proklamasi dapat terdengar karena gelombang suara merambat melalui medium. Medium utama perambatan suara di udara terbuka adalah...",
+                answers: [
+                    { text: "Air", correct: false, rationale: "Suara bisa merambat di air, tetapi bukan medium utama saat proklamasi." },
+                    { text: "Tanah", correct: false, rationale: "Suara bisa merambat di tanah, tetapi sangat lambat dan tidak efisien untuk pendengaran." },
+                    { text: "Udara", correct: true, rationale: "Gelombang suara membutuhkan medium untuk merambat, dan di ruang terbuka, medium utamanya adalah partikel-partikel udara." },
+                    { text: "Cahaya", correct: false, rationale: "Cahaya adalah gelombang elektromagnetik dan berbeda dengan gelombang suara." }
+                ]
+            },
+            {
+                question: "Siapakah tokoh pahlawan dari Surabaya yang terkenal dengan pekik 'Merdeka atau Mati!' dalam pidatonya?",
+                answers: [
+                    { text: "Jenderal Soedirman", correct: false, rationale: "Jenderal Soedirman adalah Panglima Besar TKR." },
+                    { text: "Bung Tomo", correct: true, rationale: "Sutomo, atau Bung Tomo, adalah orator yang pidatonya melalui radio berhasil membangkitkan semangat perlawanan dalam Pertempuran Surabaya." },
+                    { text: "H.O.S. Cokroaminoto", correct: false, rationale: "H.O.S. Cokroaminoto adalah pemimpin Sarekat Islam, seorang pahlawan pergerakan nasional." },
+                    { text: "Tan Malaka", correct: false, rationale: "Tan Malaka adalah seorang pemikir dan pahlawan pergerakan kemerdekaan." }
+                ]
+            },
+            {
+                question: "Selain melambangkan keberanian, warna merah pada bendera Merah Putih juga dapat diartikan sebagai...",
+                answers: [
+                    { text: "Darah para pahlawan", correct: false, rationale: "Ini adalah interpretasi populer, namun ada makna filosofis yang lebih mendasar." },
+                    { text: "Tubuh atau jasad manusia", correct: true, rationale: "Menurut filosofi bangsa Austronesia, merah melambangkan raga (tubuh manusia), sementara putih melambangkan jiwa (roh)." },
+                    { text: "Semangat api yang membara", correct: false, rationale: "Ini adalah makna kiasan, bukan makna filosofis dasarnya." },
+                    { text: "Tanah air Indonesia", correct: false, rationale: "Merah dan putih tidak secara langsung melambangkan tanah dan air." }
+                ]
+            },
+            {
+                question: "Sebuah tiang bendera memiliki bayangan sepanjang 8 meter. Jika tinggi tiang bendera adalah 17 meter, berapa selisih antara tinggi tiang dan panjang bayangannya?",
+                answers: [
+                    { text: "25 meter", correct: false, rationale: "Ini adalah hasil penjumlahan, bukan selisih." },
+                    { text: "9 meter", correct: true, rationale: "Selisih dihitung dengan cara mengurangi: 17 meter - 8 meter = 9 meter." },
+                    { text: "8 meter", correct: false, rationale: "Ini adalah panjang bayangan, bukan selisihnya." },
+                    { text: "17 meter", correct: false, rationale: "Ini adalah tinggi tiang, bukan selisihnya." }
+                ]
+            },
+            {
+                question: "Lagu 'Hari Merdeka' (Tujuh belas Agustus tahun empat lima...) adalah salah satu lagu wajib nasional yang diciptakan oleh...",
+                answers: [
+                    { text: "Ismail Marzuki", correct: false, rationale: "Ismail Marzuki menciptakan lagu 'Rayuan Pulau Kelapa'." },
+                    { text: "Ibu Sud", correct: false, rationale: "Ibu Sud menciptakan lagu 'Berkibarlah Benderaku'." },
+                    { text: "C. Simanjuntak", correct: false, rationale: "C. Simanjuntak menciptakan lagu 'Maju Tak Gentar'." },
+                    { text: "H. Mutahar", correct: true, rationale: "Husein Mutahar adalah seorang komponis lagu-lagu nasional, termasuk 'Hari Merdeka' dan 'Syukur'." }
+                ]
+            },
+            {
+                question: "Antonim atau lawan kata dari 'merdeka' adalah...",
+                answers: [
+                    { text: "Bebas", correct: false, rationale: "'Bebas' adalah sinonim atau persamaan kata dari 'merdeka'." },
+                    { text: "Terjajah", correct: true, rationale: "'Merdeka' berarti bebas dari penjajahan, sehingga lawan katanya yang paling tepat adalah 'terjajah'." },
+                    { text: "Mandiri", correct: false, rationale: "'Mandiri' adalah salah satu aspek dari kemerdekaan, bukan lawan katanya." },
+                    { text: "Berdaulat", correct: false, rationale: "'Berdaulat' juga merupakan sinonim dari 'merdeka'." }
+                ]
+            },
+            {
+                question: "Padi dan Kapas pada lambang sila ke-5 Pancasila melambangkan sandang dan pangan. Proses tumbuhan padi menghasilkan beras melalui fotosintesis, yang membutuhkan...",
+                answers: [
+                    { text: "Oksigen dan air", correct: false, rationale: "Oksigen adalah hasil dari fotosintesis, bukan bahan yang dibutuhkan." },
+                    { text: "Cahaya matahari dan karbon dioksida", correct: true, rationale: "Fotosintesis adalah proses di mana tumbuhan menggunakan energi cahaya matahari untuk mengubah air dan karbon dioksida menjadi energi." },
+                    { text: "Nitrogen dan angin", correct: false, rationale: "Nitrogen dibutuhkan untuk pertumbuhan, tetapi bukan bahan utama fotosintesis." },
+                    { text: "Tanah dan pupuk saja", correct: false, rationale: "Tanah dan pupuk adalah media dan nutrisi, tetapi proses intinya memerlukan cahaya dan CO2." }
+                ]
+            },
+            {
+                question: "Perjanjian yang secara resmi mengakhiri konfrontasi antara Indonesia dan Belanda serta mengakui kedaulatan Indonesia adalah...",
+                answers: [
+                    { text: "Perjanjian Linggarjati", correct: false, rationale: "Perjanjian Linggarjati hanya mengakui kedaulatan RI atas Jawa, Madura, dan Sumatera." },
+                    { text: "Perjanjian Renville", correct: false, rationale: "Perjanjian Renville justru mempersempit wilayah Indonesia." },
+                    { text: "Perjanjian Roem-Royen", correct: false, rationale: "Perjanjian Roem-Royen adalah langkah awal menuju pengakuan kedaulatan." },
+                    { text: "Konferensi Meja Bundar (KMB)", correct: true, rationale: "Konferensi Meja Bundar di Den Haag pada 1949 adalah momen di mana Belanda secara resmi menyerahkan kedaulatan." }
+                ]
+            },
+            {
+                question: "Semboyan 'Bhinneka Tunggal Ika' diambil dari sebuah kitab kuno peninggalan Kerajaan Majapahit. Kitab apakah itu?",
+                answers: [
+                    { text: "Kitab Negarakertagama", correct: false, rationale: "Kitab Negarakertagama berisi tentang sejarah dan wilayah kekuasaan Majapahit." },
+                    { text: "Kitab Sutasoma", correct: true, rationale: "Semboyan ini berasal dari kakawin atau Kitab Sutasoma karangan Mpu Tantular." },
+                    { text: "Kitab Arjunawiwaha", correct: false, rationale: "Kitab Arjunawiwaha berisi kisah Arjuna." },
+                    { text: "Kitab Pararaton", correct: false, rationale: "Kitab Pararaton berisi tentang raja-raja Singhasari dan Majapahit." }
+                ]
+            },
+            {
+                question: "Dalam lomba balap karung, seorang anak dapat melompat sejauh 50 cm dalam satu lompatan. Berapa banyak lompatan yang ia butuhkan untuk menempuh jarak 10 meter?",
+                answers: [
+                    { text: "10 lompatan", correct: false, rationale: "10 lompatan hanya menempuh jarak 5 meter." },
+                    { text: "15 lompatan", correct: false, rationale: "15 lompatan hanya menempuh jarak 7.5 meter." },
+                    { text: "20 lompatan", correct: true, rationale: "Jarak 10 meter sama dengan 1000 cm. Maka, jumlah lompatan yang dibutuhkan adalah 1000 cm / 50 cm = 20 lompatan." },
+                    { text: "50 lompatan", correct: false, rationale: "50 lompatan akan menempuh jarak 25 meter." }
+                ]
+            },
+            {
+                question: "Tarian dari Aceh yang sering ditampilkan dalam perayaan kemerdekaan dan melambangkan kekompakan adalah...",
+                answers: [
+                    { text: "Tari Piring", correct: false, rationale: "Tari Piring berasal dari Sumatera Barat." },
+                    { text: "Tari Saman", correct: true, rationale: "Tari Saman dikenal dengan gerakannya yang cepat dan serempak, mencerminkan nilai-nilai kekompakan dan kerja sama." },
+                    { text: "Tari Kecak", correct: false, rationale: "Tari Kecak berasal dari Bali." },
+                    { text: "Tari Jaipong", correct: false, rationale: "Tari Jaipong berasal dari Jawa Barat." }
+                ]
+            },
+            {
+                question: "Kata 'tempoh' dalam ejaan lama naskah proklamasi, jika ditulis dalam ejaan baru (EYD) menjadi...",
+                answers: [
+                    { text: "Tempuh", correct: false, rationale: "'Tempuh' berarti menjalani atau melewati." },
+                    { text: "Tempo", correct: true, rationale: "Dalam Ejaan Yang Disempurnakan (EYD), kata 'tempoh' dari ejaan lama diubah menjadi 'tempo' yang berarti 'waktu'." },
+                    { text: "Tampuk", correct: false, rationale: "'Tampuk' berarti pangkal buah atau pimpinan." },
+                    { text: "Tempah", correct: false, rationale: "'Tempah' berarti memesan untuk dibuatkan." }
+                ]
+            },
+            {
+                question: "Monumen Nasional (Monas) terbuat dari marmer. Marmer adalah batuan hasil perubahan (metamorfosis) dari batuan...",
+                answers: [
+                    { text: "Granit", correct: false, rationale: "Granit adalah batuan beku." },
+                    { text: "Pasir", correct: false, rationale: "Batu pasir adalah batuan sedimen." },
+                    { text: "Gamping (Batu Kapur)", correct: true, rationale: "Marmer terbentuk ketika batu gamping mengalami proses pemanasan dan tekanan tinggi di dalam bumi." },
+                    { text: "Basal", correct: false, rationale: "Basal adalah batuan beku vulkanik." }
+                ]
+            },
+            {
+                question: "Siapakah pahlawan wanita dari Aceh yang pernah diabadikan dalam pecahan uang kertas Rp 10.000 emisi tahun 1998?",
+                answers: [
+                    { text: "R.A. Kartini", correct: false, rationale: "R.A. Kartini berasal dari Jawa Tengah." },
+                    { text: "Martha Christina Tiahahu", correct: false, rationale: "Martha C. Tiahahu berasal dari Maluku." },
+                    { text: "Cut Nyak Dien", correct: true, rationale: "Cut Nyak Dien, pahlawan wanita dari Aceh, pernah diabadikan dalam pecahan uang kertas Rp 10.000 emisi tahun 1998." },
+                    { text: "Cut Meutia", correct: false, rationale: "Cut Meutia juga pernah diabadikan dalam uang kertas, tetapi pada pecahan dan emisi yang berbeda (Rp 1.000 tahun 2016)." }
+                ]
+            },
+            {
+                question: "Hari lahirnya Pancasila diperingati setiap tanggal...",
+                answers: [
+                    { text: "17 Agustus", correct: false, rationale: "17 Agustus adalah Hari Proklamasi Kemerdekaan Indonesia." },
+                    { text: "1 Juni", correct: true, rationale: "Tanggal 1 Juni 1945 adalah hari di mana Soekarno pertama kali menyampaikan pidato mengenai konsep awal Pancasila dalam sidang BPUPKI." },
+                    { text: "10 November", correct: false, rationale: "10 November adalah Hari Pahlawan." },
+                    { text: "28 Oktober", correct: false, rationale: "28 Oktober adalah Hari Sumpah Pemuda." }
+                ]
+            }
+        ];
+
+        const questionGrid = document.getElementById('question-grid');
+        const questionContainer = document.getElementById('question-container');
+        const questionElement = document.getElementById('question');
+        const answerButtonsElement = document.getElementById('answer-buttons');
+        const scoreContainer = document.getElementById('score-container');
+        const scoreText = document.getElementById('score-text');
+        const restartButton = document.getElementById('restart-btn');
+        const explanationContainer = document.getElementById('explanation-container');
+        const explanationText = document.getElementById('explanation-text');
+        const backButton = document.getElementById('back-btn');
+        const checkButton = document.getElementById('check-btn');
+
+        let score = 0;
+        let answeredCount = 0;
+        let currentQuestionIndex = -1;
+        const boxColors = ['#3498db', '#e74c3c', '#9b59b6', '#f1c40f', '#2ecc71', '#1abc9c', '#e67e22', '#34495e'];
+
+        function startQuiz() {
+            score = 0;
+            answeredCount = 0;
+            currentQuestionIndex = -1;
+            scoreContainer.style.display = 'none';
+            questionContainer.style.display = 'none';
+            questionGrid.style.display = 'grid';
+            generateNumberBoxes();
+        }
+
+        function generateNumberBoxes() {
+            questionGrid.innerHTML = '';
+            questions.forEach((_, index) => {
+                const numberBox = document.createElement('div');
+                numberBox.classList.add('number-box');
+                numberBox.textContent = index + 1;
+                numberBox.dataset.index = index;
+                numberBox.style.backgroundColor = boxColors[index % boxColors.length];
+                numberBox.addEventListener('click', () => selectQuestion(index));
+                questionGrid.appendChild(numberBox);
+            });
+        }
+
+        function selectQuestion(index) {
+            const numberBox = document.querySelector(`.number-box[data-index='${index}']`);
+            if (numberBox.classList.contains('answered')) {
+                return;
+            }
+            
+            currentQuestionIndex = index;
+            questionGrid.style.display = 'none';
+            questionContainer.style.display = 'block';
+            showQuestion(index);
+        }
+
+        function showQuestion(index) {
+            answerButtonsElement.innerHTML = '';
+            explanationContainer.style.display = 'none';
+            backButton.style.display = 'none';
+            checkButton.style.display = 'block';
+            checkButton.disabled = true;
+            
+            const currentQuestion = questions[index];
+            questionElement.textContent = currentQuestion.question;
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.textContent = answer.text;
+                button.classList.add('btn');
+                button.dataset.correct = answer.correct;
+                button.dataset.rationale = answer.rationale;
+                button.addEventListener('click', selectAnswer);
+                answerButtonsElement.appendChild(button);
+            });
+        }
+
+        function selectAnswer(e) {
+            // Hapus kelas 'selected' dari semua tombol
+            Array.from(answerButtonsElement.children).forEach(button => {
+                button.classList.remove('selected');
+            });
+            // Tambahkan kelas 'selected' ke tombol yang diklik
+            e.target.classList.add('selected');
+            // Aktifkan tombol periksa
+            checkButton.disabled = false;
+        }
+
+        function checkAnswer() {
+            const selectedBtn = answerButtonsElement.querySelector('.btn.selected');
+            if (!selectedBtn) return;
+
+            const isCorrect = selectedBtn.dataset.correct === 'true';
+
+            if (isCorrect) {
+                selectedBtn.classList.add('correct');
+                score++;
+            } else {
+                selectedBtn.classList.add('incorrect');
+            }
+            
+            let userRationale = selectedBtn.dataset.rationale;
+            let correctRationale = '';
+            
+            Array.from(answerButtonsElement.children).forEach(button => {
+                if (button.dataset.correct === 'true') {
+                    button.classList.add('correct');
+                    correctRationale = button.dataset.rationale;
+                }
+                button.disabled = true;
+            });
+
+            // Tampilkan penjelasan
+            let explanation = isCorrect ? userRationale : `${userRationale}\n\nJawaban yang benar: ${correctRationale}`;
+            explanationText.innerHTML = explanation.replace(/\n/g, '<br>');
+            explanationContainer.style.display = 'block';
+            
+            // Sembunyikan tombol periksa dan tampilkan tombol kembali
+            checkButton.style.display = 'none';
+            backButton.style.display = 'block';
+
+            // Tandai kotak nomor sebagai sudah dijawab
+            const numberBox = document.querySelector(`.number-box[data-index='${currentQuestionIndex}']`);
+            numberBox.classList.add('answered');
+            answeredCount++;
+        }
+
+        function handleBackButton() {
+            if (answeredCount === questions.length) {
+                showScore();
+            } else {
+                questionContainer.style.display = 'none';
+                questionGrid.style.display = 'grid';
+            }
+        }
+
+        function showScore() {
+            questionContainer.style.display = 'none';
+            questionGrid.style.display = 'none';
+            scoreContainer.style.display = 'block';
+            scoreText.textContent = `${score} / ${questions.length}`;
+        }
+        
+        checkButton.addEventListener('click', checkAnswer);
+        backButton.addEventListener('click', handleBackButton);
+        restartButton.addEventListener('click', startQuiz);
+
+        startQuiz();
+    </script>
+</body>
+</html>
